@@ -208,10 +208,10 @@ class NaoCam (NaoNode):
             if self.config['source'] == kDepthCamera and image[3] == kDepthColorSpace:
                 infomsg = CameraInfo()
                 # yes, this is only for an XTion / Kinect but that's the only thing supported by NAO
-                binning_x = float(640)/float(img.width)
-                binning_y = float(480)/float(img.height)
-                infomsg.width = img.width*binning_x
-                infomsg.height = img.height*binning_y
+                ratio_x = float(640)/float(img.width)
+                ratio_y = float(480)/float(img.height)
+                infomsg.width = img.width
+                infomsg.height = img.height
                 # [ 525., 0., 3.1950000000000000e+02, 0., 525., 2.3950000000000000e+02, 0., 0., 1. ]
                 infomsg.K = [ 525, 0, 3.1950000000000000e+02,
                               0, 525, 2.3950000000000000e+02,
@@ -219,9 +219,15 @@ class NaoCam (NaoNode):
                 infomsg.P = [ 525, 0, 3.1950000000000000e+02, 0,
                               0, 525, 2.3950000000000000e+02, 0,
                               0, 0, 1, 0 ]
+                for i in range(3):
+                    infomsg.K[i] = infomsg.K[i] / ratio_x
+                    infomsg.K[3+i] = infomsg.K[3+i] / ratio_y
+                    infomsg.P[i] = infomsg.P[i] / ratio_x
+                    infomsg.P[4+i] = infomsg.P[4+i] / ratio_y
+
                 infomsg.D = []
-                infomsg.binning_x = binning_x
-                infomsg.binning_y = binning_y
+                infomsg.binning_x = 0
+                infomsg.binning_y = 0
                 infomsg.distortion_model = ""
                 self.pub_info_.publish(infomsg)
 
