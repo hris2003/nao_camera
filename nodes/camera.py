@@ -45,6 +45,11 @@ from nao_camera.cfg import NaoCameraConfig
 
 from naoqi import ALProxy
 
+from cv_bridge import CvBridge, CvBridgeError
+import cv2
+#import cv
+import numpy as np
+
 # import resolutions
 from nao_camera.vision_definitions import k960p, k4VGA, kVGA, kQVGA, kQQVGA
 # import color spaces
@@ -74,8 +79,10 @@ class NaoCam (NaoNode):
             return None
         self.config = defaultdict(returnNone)
 
+        self.bridge = CvBridge()
         # ROS publishers
         self.pub_img_ = rospy.Publisher('~image_raw', Image)
+        self.pub_cimg_ = rospy.Publisher('~image_color', Image)
         self.pub_info_ = rospy.Publisher('~camera_info', CameraInfo)
 
         # initialize the parameter server
@@ -161,6 +168,7 @@ class NaoCam (NaoNode):
 
     def main_loop(self):
         img = Image()
+        cimg = Image()
         r = rospy.Rate(self.config['frame_rate'])
         while not rospy.is_shutdown():
             if self.pub_img_.get_num_connections() == 0:
@@ -203,7 +211,7 @@ class NaoCam (NaoNode):
             img.data = image[6]
 
             self.pub_img_.publish(img)
-
+            
             # deal with the camera info
             if self.config['source'] == kDepthCamera and image[3] == kDepthColorSpace:
                 infomsg = CameraInfo()
@@ -230,6 +238,16 @@ class NaoCam (NaoNode):
                 infomsg.binning_y = 0
                 infomsg.distortion_model = ""
                 self.pub_info_.publish(infomsg)
+		
+		#Let's publish a fake color image for ORK
+                colorimg = np.zeros((img.height,img.width,3), np.uint8)
+                try:
+                  cimg = self.bridge.cv2_to_imgmsg(colorimg, "bgr8")
+                  cimg.header.stamp = img.header.stamp
+                  cimg.header.frame_id = img.header.frame_id
+                  self.pub_cimg_.publish(cimg)
+                except CvBridgeError, e:
+                  print e
 
             elif self.config['camera_info_url'] in self.camera_infos:
                 infomsg = self.camera_infos[self.config['camera_info_url']]
