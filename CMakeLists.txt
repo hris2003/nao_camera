@@ -89,3 +89,19 @@ else()
     message(STATUS "-- Cannot find NAOqi C++ SDK! Set NAOqi_DIR to the SDK prefix to build the C++ nodes.")
     message(STATUS "-- The Python nodes will still be installed and can be run provided NAOqi is in your PYTHONPATH.")
 endif()
+
+
+#And this will install python nodes
+install(DIRECTORY nodes/
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    USE_SOURCE_PERMISSIONS)
+
+# Instructions to install launch files
+install(DIRECTORY launch/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch )
+
+# Install config file (& ignore dynamic reconfigure files)
+install(DIRECTORY cfg/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+    PATTERN "*.cfg" EXCLUDE)
+
